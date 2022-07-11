@@ -1,0 +1,9 @@
+.vscode
+allocation
+*.txt
+*.out
+*.OUT
+*.prettierrc
+*.editorcongif
+*.log
+*.json
