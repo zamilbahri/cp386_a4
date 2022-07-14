@@ -7,7 +7,7 @@
 
 // Structure to define a process
 typedef struct {
-	char id[2];
+	char id[3];
 	int size;
 	int start_address;
 } process_t;
@@ -21,8 +21,8 @@ typedef struct {
 
 // Needs to be completed
 void displayStatus(memory_t *memory);
-void allocateMemory(memory_t *memory, process_t *process, char *method);
-void releaseMemory(memory_t *memory, process_t *process);
+void allocateMemory(memory_t *memory, char *process, char *method);
+void releaseMemory(memory_t *memory, char *process);
 void compactMemory(memory_t *memory);
 
 // Utility functions
@@ -97,13 +97,13 @@ void displayStatus(memory_t *memory) {
 	// complete this function
 }
 
-void allocateMemory(memory_t *memory, process_t *process, char *method) {
+void allocateMemory(memory_t *memory, char *process, char *method) {
 	printf("Allocating memory\n");
 
 	// complete this function
 }
 
-void releaseMemory(memory_t *memory, process_t *process) {
+void releaseMemory(memory_t *memory, char *process) {
 	printf("Releasing memory\n");
 
 	// complete this function
