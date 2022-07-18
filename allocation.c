@@ -6,22 +6,33 @@
 #include <string.h>
 
 // Structure to define a process
-typedef struct {
+typedef struct process_t {
 	char id[3];
 	int size;
-	int start_address;
 } process_t;
 
-// Strucutre to define the memory block
-typedef struct {
+// Structure to define a partition that is used to store a process.
+typedef struct partition_t {
+	int size;
+	int base;
+	int available;
+	process_t process;
+	struct partition_t *prev;
+	struct partition_t *next;
+} partition_t;
+
+// Structre to define the memory block
+typedef struct memory_t {
 	int size;
 	int num_partitions;
-	process_t *processes;
+	int total_allocated;
+	partition_t *partitions;
 } memory_t;
+
 
 // Needs to be completed
 void displayStatus(memory_t *memory);
-void allocateMemory(memory_t *memory, char *process, char *method);
+int allocateMemory(memory_t *memory, char *process, int size, char *method);
 void releaseMemory(memory_t *memory, char *process);
 void compactMemory(memory_t *memory);
 
@@ -36,9 +47,21 @@ int main(int argc, char **argv) {
 
 	if (argc == 2)
 	{
+		// initialize memory_t structure
 		memory.size = atoi(argv[1]);
+		memory.num_partitions = 1;
+		memory.total_allocated = 0;
+		memory.partitions = malloc(sizeof(partition_t));
+
+		// initialize paritions_t structure
+		memory.partitions->size = memory.size;
+		memory.partitions->base = 0;
+		memory.partitions->available = 1;
+		memory.partitions->prev = NULL;
+		memory.partitions->next = NULL;
 		printf("Allocating %d bytes of memory\n", memory.size);
 	}
+
 	else {
 		printf("Expected memory size as argumnent. Exiting program. \n");
 		return 1;
@@ -55,9 +78,8 @@ int main(int argc, char **argv) {
 		
 		if (strcmp(command[0], "Exit") == 0) {
 			printf("Exiting program.\n");
-			for (int i = 0; command[i]; i++) {
-				free(command[i]);
-			}
+			cmdArrFree(command);
+			free(memory.partitions);
 			break;
 		}
 
@@ -67,18 +89,20 @@ int main(int argc, char **argv) {
 
 		else if (strcmp(command[0], "RQ") == 0) {
 			// Allocate a process with the given id, size, and method
-			printf("Allocating process %s with size %s using method %s\n", command[1], command[2], command[3]);
+			//printf("Allocating process %s with size %s using method %s\n", command[1], command[2], command[3]);
+			allocateMemory(&memory, command[1], atoi(command[2]), command[3]);
 		}
 
 		else if (strcmp(command[0], "RL") == 0) {
 			// Release process
-			printf("Releasing process %s\n", command[1]);
+			//printf("Releasing process %s\n", command[1]);
+			releaseMemory(&memory, command[1]);
 		}
 
 		else if (strcmp(command[0], "C") == 0) {
 			// Compact memory
-			printf("Compacting memory\n");
-
+			//printf("Compacting memory\n");
+			compactMemory(&memory);
 		}
 
 		else {
@@ -93,20 +117,131 @@ int main(int argc, char **argv) {
 
 void displayStatus(memory_t *memory) {
 	printf("Displaying status\n");
-	
+	// printf("Address [%d:%d] Process %s\n", memory->processes[i].base, memory->processes[i].limit, memory->processes[i].id);
+	printf("Partitions [Allocated memory = %d]:\n", memory->total_allocated);
+	partition_t *p = memory->partitions;
+	while (p) {
+		if (!(p->available)) printf("Address [%d:%d] Process %s\n", p->base, p->base + p->size - 1, p->process.id);
+		p = p->next;
+	}
+
+	p = memory->partitions;
+	printf("Holes [Free memory = %d]:\n", memory->size - memory->total_allocated);
+	while (p) {
+		if (p->available) printf("Address [%d:%d] len = %d\n", p->base, p->base + p->size - 1, p->size);
+		p = p->next;
+	}
 	// complete this function
 }
 
-void allocateMemory(memory_t *memory, char *process, char *method) {
-	printf("Allocating memory\n");
+// returns 0 if successful, 1 if not
+int allocateMemory(memory_t *memory, char *process, int size, char *method) {
 
-	// complete this function
+	if (size > memory->size - memory->total_allocated)
+	{
+		printf("Not enough memory to allocate process %s with size %d\n", process, size);
+		return 1;
+	}
+
+	// find the first available partition
+	if (strcmp(method, "F") == 0)
+	{
+		partition_t *p = memory->partitions;
+
+		while (p)
+		{
+			if (p->available)
+			{
+				if (size <= p->size)
+				{
+					// update current partition
+					p->available = 0;
+					strcpy(p->process.id, process);
+					p->process.size = size;
+					memory->total_allocated += size;
+
+					// if there is a hole after this partition, create a new partition
+					if (size < p->size)
+					{
+						memory->num_partitions++;
+						partition_t *new_p = (partition_t *)malloc(sizeof(partition_t));
+						new_p->size = p->size - size;
+						new_p->base = p->base + size;
+						p->size = size;
+						new_p->available = 1;
+						new_p->prev = p;
+						new_p->next = p->next;
+						p->next = new_p;
+					}
+
+					printf("Sucessfully allocated %d to process %s\n", size, process);
+					return 0;
+
+				}
+			}
+			p = p->next;
+		}
+	}
+
+	// find the smallest available partition (best fit)
+	else if (strcmp(method, "B") == 0)
+	{
+
+	}
+
+	// find the largest available partition (worst fit)
+	else if (strcmp(method, "W") == 0)
+	{
+
+	}
+
+	else
+	{
+		printf("Invalid method.\n");
+		return 1;
+	}
+
+	return 0;
 }
 
 void releaseMemory(memory_t *memory, char *process) {
-	printf("Releasing memory\n");
 
-	// complete this function
+	partition_t *p = memory->partitions;
+	while (p)
+	{
+		if (!(p->available))
+		{
+			if (strcmp(p->process.id, process) == 0)
+			{
+				p->available = 1;
+				int size = p->process.size;
+				memory->total_allocated -= p->process.size;
+
+				// case: next partition is free: merge and free next partition
+
+				if (p->next && p->next->available)
+				{
+					p->size += p->next->size;
+					partition_t *tmp = p->next;
+					p->next = p->next->next;
+					free(tmp);
+					memory->num_partitions--;
+				}
+
+				// case: previous partition is free: merge and free current partition
+				if (p->prev && p->prev->available)
+				{
+					p->prev->size += p->size;
+					p->prev->next = p->next;
+					free(p);
+					memory->num_partitions--;
+				}
+				printf("Sucessfully released %d from process %s\n", size, process);
+				return;
+			}
+		}
+		p = p->next;
+	}
 }
 
 void compactMemory(memory_t *memory) {
@@ -114,6 +249,9 @@ void compactMemory(memory_t *memory) {
 
 	// complete this function
 }
+
+// ========================= Utility Functions =========================
+
 
 void readCommand(char *buffer) {
 	printf("allocator>");
