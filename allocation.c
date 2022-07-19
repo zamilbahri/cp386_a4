@@ -222,15 +222,7 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 						smallestP->size = p->size;
 						smallestP->prev = p->prev;
 						smallestP->next = p->next;
-						// checking if the prev was head of the list and needs to be updated
-						if (p->prev != NULL)
-						{
-							p->prev->next = smallestP;
-						}
-						else
-						{
-							memory->partitions = smallestP;
-						}
+
 						// storing the smallest partition size so far in varable temp
 						temp = p->size;
 					}
@@ -238,10 +230,18 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 			}
 			p = p->next;
 		}
-		p = memory->partitions;
 
 		if (size <= smallestP->size)
 		{
+			// checking if the prev was head of the list and needs to be updated
+			if (smallestP->prev != NULL)
+			{
+				smallestP->prev->next = smallestP;
+			}
+			else
+			{
+				memory->partitions = smallestP;
+			}
 			// update current partition
 			smallestP->available = 0;
 			strcpy(smallestP->process.id, process);
@@ -287,16 +287,6 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 						worseP->size = p->size;
 						worseP->prev = p->prev;
 						worseP->next = p->next;
-						// checking if the prev was head of the list and needs to be updated
-						if (p->prev != NULL)
-						{
-							p->prev->next = worseP;
-						}
-						else
-						{
-							memory->partitions = worseP;
-						}
-
 						temp = p->size;
 					}
 				}
@@ -307,6 +297,16 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 
 		if (size <= worseP->size)
 		{
+			// checking if the prev was head of the list and needs to be updated
+			if (worseP->prev != NULL)
+			{
+				worseP->prev->next = worseP;
+			}
+			else
+			{
+				memory->partitions = worseP;
+			}
+
 			// update current partition
 			worseP->available = 0;
 			strcpy(worseP->process.id, process);
