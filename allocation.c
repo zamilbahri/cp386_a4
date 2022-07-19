@@ -239,7 +239,7 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 				}
 				else
 				{
-					memory->partitions->next = smallestP;
+					memory->partitions = smallestP;
 				}
 			}
 			p = p->next;
@@ -271,6 +271,70 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 	// find the largest available partition (worst fit)
 	else if (strcmp(method, "W") == 0)
 	{
+		partition_t *worseP;
+		partition_t *p = memory->partitions;
+		int temp = memory->size - memory->total_allocated - 1;
+		while (p)
+		{
+			if (p->available)
+			{
+				if (p->size >= size)
+				{
+					if (temp < p->size)
+					{
+
+						worseP = (partition_t *)malloc(sizeof(partition_t));
+						worseP->base = p->base;
+
+						temp = p->size;
+					}
+				}
+			}
+			p = p->next;
+		}
+		p = memory->partitions;
+		while (p)
+		{
+			if (p->base == worseP->base)
+			{
+				worseP->available = 1;
+				worseP->size = p->size;
+				worseP->prev = p->prev;
+				worseP->next = p->next;
+				if (p->prev != NULL)
+				{
+					p->prev->next = worseP;
+				}
+				else
+				{
+					memory->partitions = worseP;
+				}
+			}
+			p = p->next;
+		}
+		if (size <= worseP->size)
+		{
+			// update current partition
+			worseP->available = 0;
+			strcpy(worseP->process.id, process);
+			worseP->process.size = size;
+			memory->total_allocated += size;
+
+			// if there is a hole after this partition, create a new partition
+			if (size < worseP->size)
+			{
+				memory->num_partitions++;
+				partition_t *new_p = (partition_t *)malloc(sizeof(partition_t));
+				new_p->size = worseP->size - size;
+				new_p->base = worseP->base + size;
+				worseP->size = size;
+				new_p->available = 1;
+				new_p->prev = worseP;
+				new_p->next = worseP->next;
+				worseP->next = new_p;
+			}
+			printf("Sucessfully allocated %d to process %s\n", size, process);
+		}
 	}
 
 	else
