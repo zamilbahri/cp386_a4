@@ -6,13 +6,15 @@
 #include <string.h>
 
 // Structure to define a process
-typedef struct process_t {
+typedef struct process_t
+{
 	char id[3];
 	int size;
 } process_t;
 
 // Structure to define a partition that is used to store a process.
-typedef struct partition_t {
+typedef struct partition_t
+{
 	int size;
 	int base;
 	int available;
@@ -22,13 +24,13 @@ typedef struct partition_t {
 } partition_t;
 
 // Structre to define the memory block
-typedef struct memory_t {
+typedef struct memory_t
+{
 	int size;
 	int num_partitions;
 	int total_allocated;
 	partition_t *partitions;
 } memory_t;
-
 
 // Needs to be completed
 void displayStatus(memory_t *memory);
@@ -41,7 +43,8 @@ char **cmdSplit(char *cmd, const char delimiter);
 void readCommand(char *buffer);
 void cmdArrFree(char **command);
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
 	memory_t memory;
 
@@ -62,80 +65,94 @@ int main(int argc, char **argv) {
 		printf("Allocating %d bytes of memory\n", memory.size);
 	}
 
-	else {
+	else
+	{
 		printf("Expected memory size as argumnent. Exiting program. \n");
 		return 1;
 	}
 
-	while (1) {
+	while (1)
+	{
 
 		char buffer[50];
 		readCommand(buffer);
-		
+
 		char **command = cmdSplit(buffer, ' ');
 
-    printf("command: %s\n", command[0]);
-		
-		if (strcmp(command[0], "Exit") == 0) {
+		printf("command: %s\n", command[0]);
+
+		if (strcmp(command[0], "Exit") == 0)
+		{
 			printf("Exiting program.\n");
 			cmdArrFree(command);
 			free(memory.partitions);
 			break;
 		}
 
-		else if (strcmp(command[0], "Status") == 0) {
+		else if (strcmp(command[0], "Status") == 0)
+		{
 			displayStatus(&memory);
 		}
 
-		else if (strcmp(command[0], "RQ") == 0) {
+		else if (strcmp(command[0], "RQ") == 0)
+		{
 			// Allocate a process with the given id, size, and method
-			//printf("Allocating process %s with size %s using method %s\n", command[1], command[2], command[3]);
+			// printf("Allocating process %s with size %s using method %s\n", command[1], command[2], command[3]);
 			allocateMemory(&memory, command[1], atoi(command[2]), command[3]);
 		}
 
-		else if (strcmp(command[0], "RL") == 0) {
+		else if (strcmp(command[0], "RL") == 0)
+		{
 			// Release process
-			//printf("Releasing process %s\n", command[1]);
+			// printf("Releasing process %s\n", command[1]);
 			releaseMemory(&memory, command[1]);
 		}
 
-		else if (strcmp(command[0], "C") == 0) {
+		else if (strcmp(command[0], "C") == 0)
+		{
 			// Compact memory
-			//printf("Compacting memory\n");
+			// printf("Compacting memory\n");
 			compactMemory(&memory);
 		}
 
-		else {
+		else
+		{
 			printf("Invalid command.\n");
 		}
-		//free commands
+		// free commands
 		cmdArrFree(command);
 	}
 
 	return 0;
 }
 
-void displayStatus(memory_t *memory) {
+void displayStatus(memory_t *memory)
+{
 	printf("Displaying status\n");
 	// printf("Address [%d:%d] Process %s\n", memory->processes[i].base, memory->processes[i].limit, memory->processes[i].id);
 	printf("Partitions [Allocated memory = %d]:\n", memory->total_allocated);
 	partition_t *p = memory->partitions;
-	while (p) {
-		if (!(p->available)) printf("Address [%d:%d] Process %s\n", p->base, p->base + p->size - 1, p->process.id);
+	while (p)
+	{
+		if (!(p->available))
+			printf("Address [%d:%d] Process %s\n", p->base, p->base + p->size - 1, p->process.id);
 		p = p->next;
 	}
 
 	p = memory->partitions;
 	printf("Holes [Free memory = %d]:\n", memory->size - memory->total_allocated);
-	while (p) {
-		if (p->available) printf("Address [%d:%d] len = %d\n", p->base, p->base + p->size - 1, p->size);
+	while (p)
+	{
+		if (p->available)
+			printf("Address [%d:%d] len = %d\n", p->base, p->base + p->size - 1, p->size);
 		p = p->next;
 	}
 	// complete this function
 }
 
 // returns 0 if successful, 1 if not
-int allocateMemory(memory_t *memory, char *process, int size, char *method) {
+int allocateMemory(memory_t *memory, char *process, int size, char *method)
+{
 
 	if (size > memory->size - memory->total_allocated)
 	{
@@ -175,8 +192,8 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method) {
 					}
 
 					printf("Sucessfully allocated %d to process %s\n", size, process);
-					return 0;
 
+					return 0;
 				}
 			}
 			p = p->next;
@@ -186,13 +203,74 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method) {
 	// find the smallest available partition (best fit)
 	else if (strcmp(method, "B") == 0)
 	{
+		partition_t *smallestP;
+		partition_t *p = memory->partitions;
+		int temp = memory->size - memory->total_allocated + 1;
+		while (p)
+		{
+			if (p->available)
+			{
+				if (p->size >= size)
+				{
+					if (temp > p->size)
+					{
 
+						smallestP = (partition_t *)malloc(sizeof(partition_t));
+						smallestP->base = p->base;
+
+						temp = p->size;
+					}
+				}
+			}
+			p = p->next;
+		}
+		p = memory->partitions;
+		while (p)
+		{
+			if (p->base == smallestP->base)
+			{
+				smallestP->available = 1;
+				smallestP->size = p->size;
+				smallestP->prev = p->prev;
+				smallestP->next = p->next;
+				if (p->prev != NULL)
+				{
+					p->prev->next = smallestP;
+				}
+				else
+				{
+					memory->partitions->next = smallestP;
+				}
+			}
+			p = p->next;
+		}
+		if (size <= smallestP->size)
+		{
+			// update current partition
+			smallestP->available = 0;
+			strcpy(smallestP->process.id, process);
+			smallestP->process.size = size;
+			memory->total_allocated += size;
+
+			// if there is a hole after this partition, create a new partition
+			if (size < smallestP->size)
+			{
+				memory->num_partitions++;
+				partition_t *new_p = (partition_t *)malloc(sizeof(partition_t));
+				new_p->size = smallestP->size - size;
+				new_p->base = smallestP->base + size;
+				smallestP->size = size;
+				new_p->available = 1;
+				new_p->prev = smallestP;
+				new_p->next = smallestP->next;
+				smallestP->next = new_p;
+			}
+			printf("Sucessfully allocated %d to process %s\n", size, process);
+		}
 	}
-
 	// find the largest available partition (worst fit)
 	else if (strcmp(method, "W") == 0)
 	{
-
 	}
 
 	else
@@ -204,7 +282,8 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method) {
 	return 0;
 }
 
-void releaseMemory(memory_t *memory, char *process) {
+void releaseMemory(memory_t *memory, char *process)
+{
 
 	partition_t *p = memory->partitions;
 	while (p)
@@ -244,7 +323,8 @@ void releaseMemory(memory_t *memory, char *process) {
 	}
 }
 
-void compactMemory(memory_t *memory) {
+void compactMemory(memory_t *memory)
+{
 	printf("Compacting memory\n");
 
 	// complete this function
@@ -252,64 +332,63 @@ void compactMemory(memory_t *memory) {
 
 // ========================= Utility Functions =========================
 
-
-void readCommand(char *buffer) {
+void readCommand(char *buffer)
+{
 	printf("allocator>");
 	int numCommands = 0;
 	fgets(buffer, 50, stdin);
 	buffer[strcspn(buffer, "\r\n")] = 0;
 }
 
-
 // splits a string based on a delimiter. Caller must free the returned array.
 char **cmdSplit(char *cmd, const char delimiter)
 {
-    char **result = NULL;
-    int count = 0;
-    char *tmp = cmd;
-    char *last_delim = 0;
-    char delim[] = { delimiter, 0 };
+	char **result = NULL;
+	int count = 0;
+	char *tmp = cmd;
+	char *last_delim = 0;
+	char delim[] = {delimiter, 0};
 
-    /* Count how many elements will be extracted. */
-    while (*tmp)
-    {
-        if (delimiter == *tmp)
-        {
-            count++;
-            last_delim = tmp;
-        }
-        tmp++;
-    }
+	/* Count how many elements will be extracted. */
+	while (*tmp)
+	{
+		if (delimiter == *tmp)
+		{
+			count++;
+			last_delim = tmp;
+		}
+		tmp++;
+	}
 
-    /* Add space for trailing token. */
-    count += last_delim < (cmd + strlen(cmd) - 1);
+	/* Add space for trailing token. */
+	count += last_delim < (cmd + strlen(cmd) - 1);
 
-    /* Add space for terminating null string */
-    count++;
+	/* Add space for terminating null string */
+	count++;
 
-		// allocate memory for array of strings
-    result = malloc((size_t) count * sizeof(char *));
+	// allocate memory for array of strings
+	result = malloc((size_t)count * sizeof(char *));
 
-    if (result)
-    {
-        int idx = 0;
-        char *token = strtok(cmd, delim);
+	if (result)
+	{
+		int idx = 0;
+		char *token = strtok(cmd, delim);
 
-        while (token)
-        {
-            result[idx++] = strdup(token);
-            token = strtok(0, delim);
-        }
-        result[idx] = 0;
-    }
+		while (token)
+		{
+			result[idx++] = strdup(token);
+			token = strtok(0, delim);
+		}
+		result[idx] = 0;
+	}
 
-    return result;
+	return result;
 }
 
 // frees an array of strings
-void cmdArrFree(char **command) 
+void cmdArrFree(char **command)
 {
-	for (int i = 0; command[i]; i++) 
+	for (int i = 0; command[i]; i++)
 	{
 		free(command[i]);
 	}
