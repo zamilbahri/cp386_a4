@@ -195,6 +195,10 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 
 					return 0;
 				}
+				else
+				{
+					printf("No hole of sufficient size\n");
+				}
 			}
 			p = p->next;
 		}
@@ -263,6 +267,10 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 			}
 			printf("Sucessfully allocated %d to process %s\n", size, process);
 		}
+		else
+		{
+			printf("No hole of sufficient size\n");
+		}
 	}
 	// find the largest available partition (worst fit)
 	else if (strcmp(method, "W") == 0)
@@ -328,6 +336,10 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 			}
 			printf("Sucessfully allocated %d to process %s\n", size, process);
 		}
+		else
+		{
+			printf("No hole of sufficient size\n");
+		}
 	}
 
 	else
@@ -383,10 +395,43 @@ void releaseMemory(memory_t *memory, char *process)
 void compactMemory(memory_t *memory)
 {
 	printf("Compacting memory\n");
+	partition_t *p = memory->partitions;
+	int i = 0;
+	while (p)
+	{
+		if (p->available)
+		{
+			if (p->prev == NULL)
+			{
+				p->next->prev = NULL;
+				memory->partitions = p->next;
+				i += p->size;
+			}
+			else if (p->next == NULL)
+			{
+				p->size += i;
+			}
+			else
+				p->prev->next = p->next;
+		}
+		p = p->next;
+	}
+	p = memory->partitions;
+	while (p->next != NULL)
+	{
+		if (p->prev == NULL)
+		{
+			p->base = 0;
+		}
+		else
+		{
+			p->base = p->prev->base + p->prev->size;
+		}
 
-	// complete this function
+		p = p->next;
+	}
+	printf("Compaction proccess is successful\n");
 }
-
 // ========================= Utility Functions =========================
 
 void readCommand(char *buffer)
