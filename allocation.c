@@ -205,6 +205,7 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 	{
 		partition_t *smallestP;
 		partition_t *p = memory->partitions;
+		// initializing the temp to free space available
 		int temp = memory->size - memory->total_allocated + 1;
 		while (p)
 		{
@@ -214,10 +215,23 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 				{
 					if (temp > p->size)
 					{
-
+						// storing the details of the smallest partition in smallestP
 						smallestP = (partition_t *)malloc(sizeof(partition_t));
 						smallestP->base = p->base;
-
+						smallestP->available = 1;
+						smallestP->size = p->size;
+						smallestP->prev = p->prev;
+						smallestP->next = p->next;
+						// checking if the prev was head of the list and needs to be updated
+						if (p->prev != NULL)
+						{
+							p->prev->next = smallestP;
+						}
+						else
+						{
+							memory->partitions = smallestP;
+						}
+						// storing the smallest partition size so far in varable temp
 						temp = p->size;
 					}
 				}
@@ -225,25 +239,7 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 			p = p->next;
 		}
 		p = memory->partitions;
-		while (p)
-		{
-			if (p->base == smallestP->base)
-			{
-				smallestP->available = 1;
-				smallestP->size = p->size;
-				smallestP->prev = p->prev;
-				smallestP->next = p->next;
-				if (p->prev != NULL)
-				{
-					p->prev->next = smallestP;
-				}
-				else
-				{
-					memory->partitions = smallestP;
-				}
-			}
-			p = p->next;
-		}
+
 		if (size <= smallestP->size)
 		{
 			// update current partition
@@ -271,8 +267,10 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 	// find the largest available partition (worst fit)
 	else if (strcmp(method, "W") == 0)
 	{
+
 		partition_t *worseP;
 		partition_t *p = memory->partitions;
+		// initializing the temp to free space available
 		int temp = memory->size - memory->total_allocated - 1;
 		while (p)
 		{
@@ -282,9 +280,22 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 				{
 					if (temp < p->size)
 					{
-
+						// storing the details of the largest partition in worseP
 						worseP = (partition_t *)malloc(sizeof(partition_t));
 						worseP->base = p->base;
+						worseP->available = 1;
+						worseP->size = p->size;
+						worseP->prev = p->prev;
+						worseP->next = p->next;
+						// checking if the prev was head of the list and needs to be updated
+						if (p->prev != NULL)
+						{
+							p->prev->next = worseP;
+						}
+						else
+						{
+							memory->partitions = worseP;
+						}
 
 						temp = p->size;
 					}
@@ -293,25 +304,7 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 			p = p->next;
 		}
 		p = memory->partitions;
-		while (p)
-		{
-			if (p->base == worseP->base)
-			{
-				worseP->available = 1;
-				worseP->size = p->size;
-				worseP->prev = p->prev;
-				worseP->next = p->next;
-				if (p->prev != NULL)
-				{
-					p->prev->next = worseP;
-				}
-				else
-				{
-					memory->partitions = worseP;
-				}
-			}
-			p = p->next;
-		}
+
 		if (size <= worseP->size)
 		{
 			// update current partition
