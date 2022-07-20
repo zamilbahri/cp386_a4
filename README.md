@@ -1,8 +1,8 @@
-# Allocation
+# CP386 Assignment 4: Memory Allocation
 
 ## Features
 
-This program simulates operating system memory management at an abstract level. The user may allocate a certain amount of memory, and then assign portions of the memory pool to certain processes using one of three algorithmns: First Fit (F), Best Fit (B), and Worst Fit (W). They may release processes, which releases the memory back to the pool and makes it available. To get around memory fragmentation, the user may also request to perform memory compaction, which would remove any holes in between used memory.
+This program simulates operating system memory management at an abstract level. The user may request allocate a certain amount of memory, and then assign portions of this memory pool to certain processes using one of three algorithmns: First Fit (F), Best Fit (B), and Worst Fit (W). The user may release processes, which releases the memory back to the pool and makes it available. To get around memory fragmentation, the user may also request to perform memory compaction, which would remove any holes in between used memory.
 
 The following is a list of commands:
 |   Description  | Command |                 Arguments                |
@@ -170,7 +170,7 @@ Status
 Expected:
 ```
 allocator>RQ P5 50000 B
-index = 0 delta = 50000 best_delta = 1048576
+index = 0 delta = 50000 best_delta = 848576
 index = 1 delta = 25000 best_delta = 50000
 index = 2 delta = 623576 best_delta = 25000
 ```
@@ -321,11 +321,26 @@ Address [100000:1048575] len = 948576
 
 ## About Developers
 
-### Zamil Bahri
+**Zamil Bahri**: A third year student at Wilfrid Laurier University taking the course CP386 - Operating Systems.
 
-### Amirhossein Kompanizare
+**Amirhossein Kompanizare**: A third year student at Wilfrid Laurier University taking the course CP386 - Operating Systems.
 
 ## Individual Contributions
+
+### Zamil
+* General setup and utility functions
+  * Structure definitions
+  * main()
+  * readCommand()
+  * cmdSplit()
+  * cmdArrFree()
+* releaseMemory()
+* displayStatus()
+* README.md
+
+### Amir
+* allocateMemory()
+* compactMemory()
 
 ## License
 
