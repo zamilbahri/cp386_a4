@@ -396,7 +396,7 @@ void compactMemory(memory_t *memory)
 
 		p = p->next;
 	}
-	printf("Compaction proccess is successful\n");
+	printf("Compaction process is successful\n");
 }
 // ========================= Utility Functions =========================
 
