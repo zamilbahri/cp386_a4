@@ -29,11 +29,11 @@ Release process P0: `RL P0`
 
 Display the current `Status` of the total memory pool:
 
-![Status](/screenshots/examples/status.png)
+![Status](/screenshots/status.png)
 
 Compact memory: `C`
 
-![Compact](/screenshots/examples/compact.png)
+![Compact](/screenshots/compact.png)
 
 ## Test cases
 
