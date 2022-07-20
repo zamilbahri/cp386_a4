@@ -37,8 +37,6 @@ Compact memory: `C`
 
 ## Test cases
 
-Expected: Hole at [0:200000]
-
 ### 1. Request memory using any method:
 ```
 RQ P0 200000 F
@@ -57,8 +55,65 @@ Holes [Free memory = 198576]:
 Address [850000:1048575] len = 198576
 ```
 
+### 2. Release memory (between processes)
+```
+RQ P0 100000 F
+RQ P1 100000 F
+RQ P2 100000 F
+RL P1
+Status
+```
+Expected:
+```
+Partitions [Allocated memory = 200000]:
+Address [0:99999] Process P0
+Address [200000:299999] Process P2
 
-### 2. First Fit
+Holes [Free memory = 848576]:
+Address [100000:199999] len = 100000
+Address [300000:1048575] len = 748576
+```
+
+### 3. Release memory preceding free partition
+```
+RQ P0 100000 F
+RQ P1 100000 F
+RQ P2 100000 F
+RL P1
+RL P0
+Status
+```
+Expected:
+```
+Partitions [Allocated memory = 100000]:
+Address [200000:299999] Process P2
+
+Holes [Free memory = 948576]:
+Address [0:199999] len = 200000
+Address [300000:1048575] len = 748576
+```
+
+### 4. Release memory following free partition
+```
+RQ P0 100000 F
+RQ P1 100000 F
+RQ P2 100000 F
+RL P0
+RL P1
+Status
+```
+Expected:
+```
+Partitions [Allocated memory = 100000]:
+Address [200000:299999] Process P2
+
+Holes [Free memory = 948576]:
+Address [0:199999] len = 200000
+Address [300000:1048575] len = 748576
+```
+
+
+### 5. First Fit (Successful)
 ```
 RQ P0 100000 F
 RQ P1 100000 F
@@ -78,6 +133,184 @@ Address [300000:499999] Process P3
 
 Holes [Free memory = 548576]:
 Address [500000:1048575] len = 548576
+```
+### 6. First Fit (Unsuccessful)
+```
+RQ P0 100000 F
+RQ P1 900000 F
+RL P0
+RQ P2 200000 F
+Status
+```
+Expected:
+```
+allocator>RQ P2 200000 F
+Not enough memory to allocate process P2 with size 200000
+```
+```
+Partitions [Allocated memory = 900000]:
+Address [100000:999999] Process P1
+
+Holes [Free memory = 148576]:
+Address [0:99999] len = 100000
+Address [1000000:1048575] len = 48576
+```
+
+### 7. Best Fit (Successful)
+```
+RQ P0 100000 B
+RQ P1 100000 B
+RQ P2 75000 B
+RQ P3 100000 B
+RL P0
+RL P2
+RQ P5 50000 B
+Status
+```
+Expected:
+```
+allocator>RQ P5 50000 B
+index = 0 delta = 50000 best_delta = 1048576
+index = 1 delta = 25000 best_delta = 50000
+index = 2 delta = 623576 best_delta = 25000
+```
+```
+Partitions [Allocated memory = 250000]:
+Address [100000:199999] Process P1
+Address [200000:249999] Process P5
+Address [275000:374999] Process P3
+
+Holes [Free memory = 798576]:
+Address [0:99999] len = 100000
+Address [250000:274999] len = 25000
+Address [375000:1048575] len = 673576
+```
+### 8. Best Fit (Unsuccessful)
+```
+RQ P0 100000 B
+RQ P1 900000 B
+RL P0
+RQ P2 200000 B
+Status
+```
+Expected:
+```
+allocator>RQ P2 200000 B
+Not enough memory to allocate process P2 with size 200000
+```
+```
+Partitions [Allocated memory = 900000]:
+Address [100000:999999] Process P1
+
+Holes [Free memory = 148576]:
+Address [0:99999] len = 100000
+Address [1000000:1048575] len = 48576
+```
+
+### 9. Worst Fit (Successful)
+```
+RQ P0 100000 W
+RQ P1 100000 W
+RQ P2 75000 W
+RQ P3 700000 W
+RL P0
+RL P2
+RQ P5 50000 W
+Status
+```
+Expected:
+```
+allocator>RQ P5 50000 W
+index = 0 delta = 50000 worst_delta = 0
+index = 1 delta = 25000 worst_delta = 50000
+index = 2 delta = 23576 worst_delta = 50000
+```
+```
+Partitions [Allocated memory = 850000]:
+Address [0:49999] Process P5
+Address [100000:199999] Process P1
+Address [275000:974999] Process P3
+
+Holes [Free memory = 198576]:
+Address [50000:99999] len = 50000
+Address [200000:274999] len = 75000
+Address [975000:1048575] len = 73576
+```
+### 10. Worst Fit (Unsuccessful)
+```
+RQ P0 100000 W
+RQ P1 900000 W
+RL P0
+RQ P2 200000 W
+Status
+```
+Expected:
+```
+allocator>RQ P2 200000 W
+Not enough memory to allocate process P2 with size 200000
+```
+```
+Partitions [Allocated memory = 900000]:
+Address [100000:999999] Process P1
+
+Holes [Free memory = 148576]:
+Address [0:99999] len = 100000
+Address [1000000:1048575] len = 48576
+```
+
+### 11. Compaction (Start)
+```
+RQ P0 100000 F
+RQ P1 100000 F
+RL P0
+C
+Status
+```
+Expected:
+```
+Partitions [Allocated memory = 100000]:
+Address [0:99999] Process P1
+
+Holes [Free memory = 948576]:
+Address [100000:1048575] len = 948576
+```
+
+### 12. Compaction (Middle)
+```
+RQ P0 100000 B
+RQ P1 100000 B
+RQ P2 75000 B
+RQ P3 100000 B
+RL P0
+RL P2
+RQ P5 50000 B
+C
+Status
+```
+Expected:
+```
+Partitions [Allocated memory = 250000]:
+Address [0:99999] Process P1
+Address [100000:149999] Process P5
+Address [150000:249999] Process P3
+
+Holes [Free memory = 798576]:
+Address [250000:1048575] len = 798576
+```
+
+### 13. Compaction (End - redundant)
+```
+RQ P0 100000 F
+C
+Status
+```
+Expected:
+```
+Partitions [Allocated memory = 100000]:
+Address [0:99999] Process P0
+
+Holes [Free memory = 948576]:
+Address [100000:1048575] len = 948576
 ```
 
 ## Makefile
