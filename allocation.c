@@ -27,7 +27,6 @@ typedef struct partition_t
 typedef struct memory_t
 {
 	int size;
-	int num_partitions;
 	int total_allocated;
 	partition_t *partitions;
 } memory_t;
@@ -52,7 +51,6 @@ int main(int argc, char **argv)
 	{
 		// initialize memory_t structure
 		memory.size = atoi(argv[1]);
-		memory.num_partitions = 1;
 		memory.total_allocated = 0;
 		memory.partitions = malloc(sizeof(partition_t));
 
@@ -95,21 +93,18 @@ int main(int argc, char **argv)
 		else if (strcmp(command[0], "RQ") == 0)
 		{
 			// Allocate a process with the given id, size, and method
-			// printf("Allocating process %s with size %s using method %s\n", command[1], command[2], command[3]);
 			allocateMemory(&memory, command[1], atoi(command[2]), command[3]);
 		}
 
 		else if (strcmp(command[0], "RL") == 0)
 		{
 			// Release process
-			// printf("Releasing process %s\n", command[1]);
 			releaseMemory(&memory, command[1]);
 		}
 
 		else if (strcmp(command[0], "C") == 0)
 		{
 			// Compact memory
-			// printf("Compacting memory\n");
 			compactMemory(&memory);
 		}
 
@@ -126,8 +121,7 @@ int main(int argc, char **argv)
 
 void displayStatus(memory_t *memory)
 {
-	printf("Displaying status\n");
-	// printf("Address [%d:%d] Process %s\n", memory->processes[i].base, memory->processes[i].limit, memory->processes[i].id);
+	
 	printf("Partitions [Allocated memory = %d]:\n", memory->total_allocated);
 	partition_t *p = memory->partitions;
 	while (p)
@@ -180,7 +174,6 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 					// if there is a hole after this partition, create a new partition
 					if (size < p->size)
 					{
-						memory->num_partitions++;
 						partition_t *new_p = (partition_t *)malloc(sizeof(partition_t));
 						new_p->size = p->size - size;
 						new_p->base = p->base + size;
@@ -208,25 +201,25 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 		partition_t *smallestP;
 		partition_t *p = memory->partitions;
 		// initializing the temp to free space available
-		int temp = memory->size - memory->total_allocated + 1;
+		int temp = memory->size - memory->total_allocated;
+		int smallest_delta = temp;
+		int idx = 0;
+
 		while (p)
 		{
 			if (p->available)
 			{
 				if (p->size >= size)
 				{
+					printf("index = %d delta = %d best_delta = %d\n", idx++, p->size - size, smallest_delta);
 					if (temp > p->size)
 					{
-						// storing the details of the smallest partition in smallestP
-						smallestP = (partition_t *)malloc(sizeof(partition_t));
-						smallestP->base = p->base;
-						smallestP->available = 1;
-						smallestP->size = p->size;
-						smallestP->prev = p->prev;
-						smallestP->next = p->next;
+						// storing smallest partition in smallestP
+						smallestP = p;
 
 						// storing the smallest partition size so far in varable temp
 						temp = p->size;
+						smallest_delta = p->size - size;
 					}
 				}
 			}
@@ -235,15 +228,6 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 
 		if (size <= smallestP->size)
 		{
-			// checking if the prev was head of the list and needs to be updated
-			if (smallestP->prev != NULL)
-			{
-				smallestP->prev->next = smallestP;
-			}
-			else
-			{
-				memory->partitions = smallestP;
-			}
 			// update current partition
 			smallestP->available = 0;
 			strcpy(smallestP->process.id, process);
@@ -253,7 +237,6 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 			// if there is a hole after this partition, create a new partition
 			if (size < smallestP->size)
 			{
-				memory->num_partitions++;
 				partition_t *new_p = (partition_t *)malloc(sizeof(partition_t));
 				new_p->size = smallestP->size - size;
 				new_p->base = smallestP->base + size;
@@ -277,22 +260,24 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 		partition_t *p = memory->partitions;
 		// initializing the temp to free space available
 		int temp = 0;
+		int largest_delta = temp;
+		int idx = 0;
+
 		while (p)
 		{
 			if (p->available)
 			{
 				if (p->size >= size)
 				{
+					printf("index = %d delta = %d best_delta = %d\n", idx++, p->size - size, largest_delta);
 					if (temp < p->size)
 					{
-						// storing the details of the largest partition in worseP
-						worseP = (partition_t *)malloc(sizeof(partition_t));
-						worseP->base = p->base;
-						worseP->available = 1;
-						worseP->size = p->size;
-						worseP->prev = p->prev;
-						worseP->next = p->next;
+						// storing the largest partition in worseP
+						worseP = p;
+
+						// storing the largest partition size so far in variable temp
 						temp = p->size;
+						largest_delta = p->size - size;
 					}
 				}
 			}
@@ -302,15 +287,6 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 
 		if (size <= worseP->size)
 		{
-			// checking if the prev was head of the list and needs to be updated
-			if (worseP->prev != NULL)
-			{
-				worseP->prev->next = worseP;
-			}
-			else
-			{
-				memory->partitions = worseP;
-			}
 
 			// update current partition
 			worseP->available = 0;
@@ -321,7 +297,6 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 			// if there is a hole after this partition, create a new partition
 			if (size < worseP->size)
 			{
-				memory->num_partitions++;
 				partition_t *new_p = (partition_t *)malloc(sizeof(partition_t));
 				new_p->size = worseP->size - size;
 				new_p->base = worseP->base + size;
@@ -367,7 +342,6 @@ void releaseMemory(memory_t *memory, char *process)
 					partition_t *tmp = p->next;
 					p->next = p->next->next;
 					free(tmp);
-					memory->num_partitions--;
 				}
 
 				// case: previous partition is free: merge and free current partition
@@ -376,7 +350,6 @@ void releaseMemory(memory_t *memory, char *process)
 					p->prev->size += p->size;
 					p->prev->next = p->next;
 					free(p);
-					memory->num_partitions--;
 				}
 				printf("Sucessfully released %d from process %s\n", size, process);
 				return;
@@ -388,7 +361,6 @@ void releaseMemory(memory_t *memory, char *process)
 
 void compactMemory(memory_t *memory)
 {
-	printf("Compacting memory\n");
 	partition_t *p = memory->partitions;
 	int i = 0;
 	while (p)
