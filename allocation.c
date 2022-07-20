@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 
 void displayStatus(memory_t *memory)
 {
-	
+
 	printf("Partitions [Allocated memory = %d]:\n", memory->total_allocated);
 	partition_t *p = memory->partitions;
 	while (p)
@@ -212,8 +212,9 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 				if (p->size >= size)
 				{
 					printf("index = %d delta = %d best_delta = %d\n", idx++, p->size - size, smallest_delta);
-					if (temp > p->size)
+					if (temp >= p->size)
 					{
+
 						// storing smallest partition in smallestP
 						smallestP = p;
 
@@ -378,7 +379,10 @@ void compactMemory(memory_t *memory)
 				p->size += i;
 			}
 			else
+			{
 				p->prev->next = p->next;
+				i += p->size;
+			}
 		}
 		p = p->next;
 	}
