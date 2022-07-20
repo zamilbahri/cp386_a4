@@ -387,7 +387,7 @@ void compactMemory(memory_t *memory)
 		p = p->next;
 	}
 	p = memory->partitions;
-	while (p->next != NULL)
+	while (p != NULL)
 	{
 		if (p->prev == NULL)
 		{
