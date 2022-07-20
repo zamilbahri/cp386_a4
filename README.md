@@ -12,7 +12,6 @@ The following is a list of commands:
 | Display Status | Status  |                                          |
 | Compact Memory | C       |                                          |
 | Exit Program   | Exit    |                                          |
-|                |         |                                          |
 
 
 ## Examples and Screenshots
