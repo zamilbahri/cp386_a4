@@ -79,8 +79,6 @@ int main(int argc, char **argv)
 
 		char **command = cmdSplit(buffer, ' ');
 
-		printf("command: %s\n", command[0]);
-
 		if (strcmp(command[0], "Exit") == 0)
 		{
 			printf("Exiting program.\n");
@@ -139,6 +137,8 @@ void displayStatus(memory_t *memory)
 		p = p->next;
 	}
 
+	printf("\n");
+
 	p = memory->partitions;
 	printf("Holes [Free memory = %d]:\n", memory->size - memory->total_allocated);
 	while (p)
@@ -195,13 +195,11 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 
 					return 0;
 				}
-				else
-				{
-					printf("No hole of sufficient size\n");
-				}
 			}
 			p = p->next;
 		}
+		printf("No hole of sufficient size\n");
+		return 1;
 	}
 
 	// find the smallest available partition (best fit)
@@ -266,11 +264,10 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 				smallestP->next = new_p;
 			}
 			printf("Sucessfully allocated %d to process %s\n", size, process);
+			return 0;
 		}
-		else
-		{
-			printf("No hole of sufficient size\n");
-		}
+		printf("No hole of sufficient size\n");
+		return 1;
 	}
 	// find the largest available partition (worst fit)
 	else if (strcmp(method, "W") == 0)
@@ -279,7 +276,7 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 		partition_t *worseP;
 		partition_t *p = memory->partitions;
 		// initializing the temp to free space available
-		int temp = memory->size - memory->total_allocated - 1;
+		int temp = 0;
 		while (p)
 		{
 			if (p->available)
@@ -335,11 +332,10 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 				worseP->next = new_p;
 			}
 			printf("Sucessfully allocated %d to process %s\n", size, process);
+			return 0;
 		}
-		else
-		{
-			printf("No hole of sufficient size\n");
-		}
+		printf("No hole of sufficient size\n");
+		return 1;
 	}
 
 	else
@@ -347,8 +343,6 @@ int allocateMemory(memory_t *memory, char *process, int size, char *method)
 		printf("Invalid method.\n");
 		return 1;
 	}
-
-	return 0;
 }
 
 void releaseMemory(memory_t *memory, char *process)
