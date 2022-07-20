@@ -16,7 +16,7 @@ The following is a list of commands:
 
 ## Examples and Screenshots
 
-Compile and run the program: `make run`
+Compile and run the program: `make run`. By defualt, the amount allocated is 1 MB. To change this, edit line 12 in the Makefile with the desired amount of memory.
 
 Request 200KB of memory for process P0 using first fit: `RQ P0 200000 F`
 
@@ -33,6 +33,10 @@ Display the current `Status` of the total memory pool:
 Compact memory: `C`
 
 ![Compact](/screenshots/compact.png)
+
+Example of entire process:
+
+![Full Process](/screenshots/fullprocess.png)_
 
 ## Test cases
 
