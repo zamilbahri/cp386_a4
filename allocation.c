@@ -23,7 +23,7 @@ typedef struct partition_t
 	struct partition_t *next;
 } partition_t;
 
-// Structre to define the memory block
+// Structure to define the memory block
 typedef struct memory_t
 {
 	int size;
@@ -84,10 +84,10 @@ int main(int argc, char **argv)
 			partition_t *p = memory.partitions;
 			while (p)
 			{
-				free(p);
+				partition_t *tmp = p;
 				p = p->next;
+				free(tmp);
 			}
-			free(memory.partitions);
 			break;
 		}
 
@@ -378,14 +378,15 @@ void compactMemory(memory_t *memory)
 		int i = 0;
 		while (p)
 		{
+			partition_t *tmp = NULL;
 			if (p->available)
 			{
+				tmp = p;
 				if (p->prev == NULL)
 				{
 					p->next->prev = NULL;
 					memory->partitions = p->next;
 					i += p->size;
-					free(p);
 				}
 				else if (p->next == NULL)
 				{
@@ -395,11 +396,13 @@ void compactMemory(memory_t *memory)
 				{
 					p->prev->next = p->next;
 					i += p->size;
-					free(p);
 				}
 			}
 			p = p->next;
+			if (p && tmp) free(tmp); // free the partition if it is not the last one
+			                         //  and it is available
 		}
+
 		p = memory->partitions;
 		while (p)
 		{
