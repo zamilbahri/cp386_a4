@@ -81,6 +81,12 @@ int main(int argc, char **argv)
 		{
 			printf("Exiting program.\n");
 			cmdArrFree(command);
+			partition_t *p = memory.partitions;
+			while (p)
+			{
+				free(p);
+				p = p->next;
+			}
 			free(memory.partitions);
 			break;
 		}
@@ -362,47 +368,54 @@ void releaseMemory(memory_t *memory, char *process)
 
 void compactMemory(memory_t *memory)
 {
-	partition_t *p = memory->partitions;
-	int i = 0;
-	while (p)
+	if (memory->total_allocated == 0)
 	{
-		if (p->available)
+		printf("Compaction is not needed.\n");
+	}
+	else
+	{
+		partition_t *p = memory->partitions;
+		int i = 0;
+		while (p)
+		{
+			if (p->available)
+			{
+				if (p->prev == NULL)
+				{
+					p->next->prev = NULL;
+					memory->partitions = p->next;
+					i += p->size;
+					free(p);
+				}
+				else if (p->next == NULL)
+				{
+					p->size += i;
+				}
+				else
+				{
+					p->prev->next = p->next;
+					i += p->size;
+					free(p);
+				}
+			}
+			p = p->next;
+		}
+		p = memory->partitions;
+		while (p)
 		{
 			if (p->prev == NULL)
 			{
-				p->next->prev = NULL;
-				memory->partitions = p->next;
-				i += p->size;
-				free(p);
-			}
-			else if (p->next == NULL)
-			{
-				p->size += i;
+				p->base = 0;
 			}
 			else
 			{
-				p->prev->next = p->next;
-				i += p->size;
-				free(p);
+				p->base = p->prev->base + p->prev->size;
 			}
-		}
-		p = p->next;
-	}
-	p = memory->partitions;
-	while (p != NULL)
-	{
-		if (p->prev == NULL)
-		{
-			p->base = 0;
-		}
-		else
-		{
-			p->base = p->prev->base + p->prev->size;
-		}
 
-		p = p->next;
+			p = p->next;
+		}
+		printf("Compaction process is successful\n");
 	}
-	printf("Compaction process is successful\n");
 }
 // ========================= Utility Functions =========================
 
