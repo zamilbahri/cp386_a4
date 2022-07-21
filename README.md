@@ -342,8 +342,10 @@ Address [100000:1048575] len = 948576
 * README.md
 
 ### Amir
+* main()
 * allocateMemory()
 * compactMemory()
+* README.md
 
 ## License
 
