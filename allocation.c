@@ -373,6 +373,7 @@ void compactMemory(memory_t *memory)
 				p->next->prev = NULL;
 				memory->partitions = p->next;
 				i += p->size;
+				free(p);
 			}
 			else if (p->next == NULL)
 			{
@@ -382,6 +383,7 @@ void compactMemory(memory_t *memory)
 			{
 				p->prev->next = p->next;
 				i += p->size;
+				free(p);
 			}
 		}
 		p = p->next;
